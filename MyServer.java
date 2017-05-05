@@ -2,11 +2,20 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashSet;
 
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+
+
 public class MyServer {
+
+    private static JFrame frame = new JFrame("Server");
+    private static JTextArea messageArea = new JTextArea(8, 40);
 
     /**
      * The port that the server listens on.
@@ -28,12 +37,29 @@ public class MyServer {
 
     static String input;
 
+
     /**
-     * The appplication main method, which just listens on a port and
+     * Create GUI for server's view of chatroom
+     */
+    public MyServer() {
+
+        // Layout GUI
+        messageArea.setEditable(false);
+        frame.getContentPane().add(new JScrollPane(messageArea), "Center");
+        frame.pack();
+    }
+
+    /**
+     * The appplication main method, which listens on a port, displays server info, and
      * spawns handler threads.
      */
     public static void main(String[] args) throws Exception {
-        System.out.println("The chat server is running.");
+        messageArea.append("Server IP Address: " + InetAddress.getLocalHost().getHostAddress() + "\n");
+        messageArea.append("Port: " + PORT + "\n\n");
+        messageArea.append("The chat server is running." + "\n\n");
+        MyServer server = new MyServer();
+        server.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        server.frame.setVisible(true);
         ServerSocket listener = new ServerSocket(PORT);
         try {
             while (true) {
@@ -65,9 +91,9 @@ public class MyServer {
         /**
          * Services this thread's client by repeatedly requesting a
          * screen name until a unique one has been submitted, then
-         * acknowledges the name and registers the output stream for
-         * the client in a global set, then repeatedly gets inputs and
-         * broadcasts them.
+         * acknowledges the name, displays the user has joined chat,
+         * and registers the output stream for the client in a global
+         * set, then repeatedly gets inputs and broadcasts them.
          */
         public void run() {
             try {
@@ -84,7 +110,7 @@ public class MyServer {
                 while (true) {
                     out.println("SUBMITNAME");
                     name = in.readLine();
-                	System.out.println(name + " joined the chat");
+                	messageArea.append(name + " joined the chat\n");
                     if (name == null) {
                         return;
                     }
@@ -103,6 +129,7 @@ public class MyServer {
                 writers.add(out);
 
                 // Accept messages from this client and broadcast them.
+                // Server views the chat from all clients
                 // Ignore other clients that cannot be broadcasted to.
                 while (true) {
                     input = in.readLine();
@@ -112,16 +139,17 @@ public class MyServer {
                     for (PrintWriter writer : writers) {
                         writer.println("MESSAGE " + name + ": " + input);
                     }
-                    System.out.println(name + " wrote: " + input);
+                    messageArea.append(name + ": " + input + "\n");
                 }
             } catch (IOException e) {
                 System.out.println(e);
             } finally {
                 // This client is going down!  Remove its name and its print
                 // writer from the sets, and close its socket.
+                // Server is notified which client leaves the chat
                 if (name != null) {
                     names.remove(name);
-                    System.out.println(name + " has left the chat");
+                    messageArea.append(name + " has left the chat\n");
                 }
                 if (out != null) {
                     writers.remove(out);
