@@ -15,7 +15,8 @@ import javax.swing.JTextArea;
 public class MyServer {
 
     private static JFrame frame = new JFrame("Server");
-    private static JTextArea messageArea = new JTextArea(8, 40);
+    private static JTextArea messageArea = new JTextArea(15, 40);
+    private static JTextArea userArea = new JTextArea(1, 10);
 
     /**
      * The port that the server listens on.
@@ -46,7 +47,17 @@ public class MyServer {
         // Layout GUI
         messageArea.setEditable(false);
         frame.getContentPane().add(new JScrollPane(messageArea), "Center");
+        userArea.setEditable(false);
+        frame.getContentPane().add(new JScrollPane(userArea), "East");
         frame.pack();
+    }
+
+
+    public static void viewUsers() {
+        userArea.setText("");
+        for (String users : names) {
+            userArea.append(users + "\n");
+        }
     }
 
     /**
@@ -132,6 +143,7 @@ public class MyServer {
                 // Server views the chat from all clients
                 // Ignore other clients that cannot be broadcasted to.
                 while (true) {
+                    viewUsers();
                     input = in.readLine();
                     if (input == null) {
                         return;
@@ -139,6 +151,7 @@ public class MyServer {
                     for (PrintWriter writer : writers) {
                         writer.println("MESSAGE " + name + ": " + input);
                     }
+
                     messageArea.append(name + ": " + input + "\n");
                 }
             } catch (IOException e) {
@@ -149,6 +162,7 @@ public class MyServer {
                 // Server is notified which client leaves the chat
                 if (name != null) {
                     names.remove(name);
+                    viewUsers();
                     messageArea.append(name + " has left the chat\n");
                 }
                 if (out != null) {
